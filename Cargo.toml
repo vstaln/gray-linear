@@ -1,0 +1,16 @@
+[package]
+name = "gray-linear"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.88"
+description = "linear issue-tracker tools for the gray agent harness"
+license = "MIT"
+[lib]
+name = "linear_plugin"
+path = "src/lib.rs"
+[[bin]]
+name = "linear"
+path = "src/main.rs"
+[dependencies]
+serde_json = { version = "1", features = ["preserve_order"] }
+ureq = { version = "2", features = ["json"] }
