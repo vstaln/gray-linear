@@ -201,6 +201,7 @@ fn cli(argv: &[String]) -> Result<String, String> {
         }
         Some("status") | None => Ok(format!("Linear\n  key: {}",
             if api_key().is_some() { "set" } else { "MISSING" })),
+        Some("-h" | "--help" | "help") => Ok("usage: linear setup | status".into()),
         Some(o) => Err(format!("unknown verb {o}")),
     }
 }
