@@ -71,8 +71,16 @@ fn gql(query: &str, vars: Value) -> Result<Value, String> {
             }
             Ok(v["data"].clone())
         }
-        Err(ureq::Error::Status(c, r)) => Err(format!("HTTP {c}: {}",
-            r.into_string().unwrap_or_default().chars().take(300).collect::<String>())),
+        Err(ureq::Error::Status(c, r)) => {
+            let body = r.into_string().unwrap_or_default();
+            let msg = serde_json::from_str::<Value>(&body).ok().and_then(|v|
+                v["errors"].as_array().and_then(|es| es.iter()
+                    .filter_map(|e| e["userPresentableMessage"].as_str()
+                        .or_else(|| e["message"].as_str()))
+                    .collect::<Vec<_>>().into_iter().next().map(str::to_string)))
+                .unwrap_or_else(|| body.chars().take(300).collect());
+            Err(format!("HTTP {c}: {}", msg.trim()))
+        }
         Err(e) => Err(e.to_string()),
     }
 }
