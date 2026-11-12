@@ -15,21 +15,21 @@ fn manifest() -> Value {
         "name": NAME, "display_name": "Linear",
         "version": env!("CARGO_PKG_VERSION"), "protocol": "1.1",
         "tools": [
-            {"name": "linear_issues",
+            {"name": "linear_issues", "label": "Linear issues", "preview": "{team} · {state} · {filter}",
              "description": "List/search Linear issues. filter = substring match on title; state filters by state name; team limits to a team key. Returns 'KEY | state | title' lines.",
              "parameters": {"type": "object", "properties": {
                 "filter": {"type": "string"}, "team": {"type": "string"},
                 "state": {"type": "string"}, "limit": {"type": "integer"}}}},
-            {"name": "linear_issue",
+            {"name": "linear_issue", "label": "Linear", "preview": "{key}",
              "description": "Full detail on one issue by key (ABC-123) or id.",
              "parameters": {"type": "object", "properties": {
                 "key": {"type": "string"}}, "required": ["key"]}},
-            {"name": "linear_comment",
+            {"name": "linear_comment", "label": "Linear comment", "preview": "{key}\n{body|firstline}",
              "description": "Comment on an issue.",
              "parameters": {"type": "object", "properties": {
                 "key": {"type": "string"}, "body": {"type": "string"}},
              "required": ["key","body"]}},
-            {"name": "linear_create",
+            {"name": "linear_create", "label": "Linear create", "preview": "{team} · {title}",
              "description": "Create an issue. team = team key (defaults to config team).",
              "parameters": {"type": "object", "properties": {
                 "title": {"type": "string"}, "description": {"type": "string"},
