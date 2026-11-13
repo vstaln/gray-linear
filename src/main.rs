@@ -14,21 +14,21 @@ fn manifest() -> Value {
         "name": NAME, "display_name": "Linear",
         "version": env!("CARGO_PKG_VERSION"), "protocol": "1.1",
         "tools": [
-            {"name": "linear_issues",
+            {"name": "linear_issues", "label": "Linear issues", "preview": "{team} · {state} · {filter}",
              "description": "List/search Linear issues. filter = substring match on title; state filters by state name; team limits to a team key. Returns 'KEY | state | title' lines.",
              "parameters": {"type": "object", "properties": {
                 "filter": {"type": "string"}, "team": {"type": "string"},
                 "state": {"type": "string"}, "limit": {"type": "integer"}}}},
-            {"name": "linear_issue",
+            {"name": "linear_issue", "label": "Linear", "preview": "{key}",
              "description": "Full detail on one issue by key (ABC-123) or id.",
              "parameters": {"type": "object", "properties": {
                 "key": {"type": "string"}}, "required": ["key"]}},
-            {"name": "linear_comment",
+            {"name": "linear_comment", "label": "Linear comment", "preview": "{key}\n{body|firstline}",
              "description": "Comment on an issue.",
              "parameters": {"type": "object", "properties": {
                 "key": {"type": "string"}, "body": {"type": "string"}},
              "required": ["key","body"]}},
-            {"name": "linear_create",
+            {"name": "linear_create", "label": "Linear create", "preview": "{team} · {title}",
              "description": "Create an issue. team = team key (defaults to config team).",
              "parameters": {"type": "object", "properties": {
                 "title": {"type": "string"}, "description": {"type": "string"},
@@ -36,6 +36,7 @@ fn manifest() -> Value {
              "required": ["title"]}},
         ],
         "commands": ["/linear"], "subcommands": ["linear"],
+        "command_descriptions": {"/linear": "read and update Linear issues"},
     })
 }
 
@@ -81,14 +82,27 @@ fn gql(query: &str, vars: Value) -> Result<Value, String> {
             }
             Ok(v["data"].clone())
         }
-        Err(ureq::Error::Status(c, r)) => Err(format!(
-            "HTTP {c}: {}",
-            r.into_string()
-                .unwrap_or_default()
-                .chars()
-                .take(300)
-                .collect::<String>()
-        )),
+        Err(ureq::Error::Status(c, r)) => {
+            let body = r.into_string().unwrap_or_default();
+            let msg = serde_json::from_str::<Value>(&body)
+                .ok()
+                .and_then(|v| {
+                    v["errors"].as_array().and_then(|es| {
+                        es.iter()
+                            .filter_map(|e| {
+                                e["userPresentableMessage"]
+                                    .as_str()
+                                    .or_else(|| e["message"].as_str())
+                            })
+                            .collect::<Vec<_>>()
+                            .into_iter()
+                            .next()
+                            .map(str::to_string)
+                    })
+                })
+                .unwrap_or_else(|| body.chars().take(300).collect());
+            Err(format!("HTTP {c}: {}", msg.trim()))
+        }
         Err(e) => Err(e.to_string()),
     }
 }
@@ -249,6 +263,9 @@ fn tool(name: &str, args: &Value) -> Value {
 fn cli(argv: &[String]) -> Result<String, String> {
     match argv.first().map(String::as_str) {
         Some("setup") => {
+            if argv.len() == 1 {
+                return Err("nothing to save — pass --key <LINEAR_API_KEY> [--team KEY]".into());
+            }
             let mut cfg = read_config();
             let mut it = argv[1..].iter();
             while let Some(f) = it.next() {
