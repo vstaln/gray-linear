@@ -37,6 +37,7 @@ fn manifest() -> Value {
              "required": ["title"]}},
         ],
         "commands": ["/linear"], "subcommands": ["linear"],
+        "command_descriptions": {"/linear": "read and update Linear issues"},
     })
 }
 
